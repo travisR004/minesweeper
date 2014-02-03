@@ -1,3 +1,6 @@
+require "debugger"
+require "yaml"
+
 class MinesweeperTile
   attr_reader :bomb, :pos, :game
   attr_accessor :revealed, :flagged
@@ -64,15 +67,17 @@ class MinesweeperGame
   end
 
   def save
+    #debugger
+    yaml_grid = @grid.to_yaml
     begin
       puts "What would you like to name your saved game (not including .txt extension)?"
       filename = gets.chomp + ".txt"
       raise if File.exist?(filename)
-      File.open(filename, "w") { |f| f.write(@grid.to_yaml) }
+      File.open(filename, "w") { |f| f.write(yaml_grid) }
     rescue
       puts "A file by that name already exists.  Overwrite?  (y/n)"
       if gets.chomp == "y"
-        File.open(filename, "w") { |f| f.write(@grid.to_yaml) }
+        File.open(filename, "w") { |f| f.write(yaml_grid) }
       else
         retry
       end
@@ -89,7 +94,7 @@ class MinesweeperGame
 
       case command
       when "s"
-        game.save
+        self.save
         puts "Game saved!"
         return nil
       when "r"
