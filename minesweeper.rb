@@ -1,11 +1,12 @@
 class MinesweeperTile
-  attr_reader :bomb, :pos
+  attr_reader :bomb, :pos. :game
   attr_accessor :revealed, :flagged
 
-  def initialize(x_dim, y_dim)
+  def initialize(x_index, y_index, game)
     @bomb = false
-    @pos = [x_dim, y_dim]
+    @pos = [x_index, y_index]
     @revealed = false
+    @game = game
   end
 
   def reveal
@@ -22,6 +23,7 @@ class MinesweeperTile
   end
 
   def adjacent_bombs
+  end
 
 
 
@@ -55,5 +57,17 @@ class MinesweeperGame
       end
     end
     grid
+  end
+
+  def neighbors(pos)
+    neighbors = []
+    (pos[0] - 1 .. pos[0] + 1).each do |x_ind|
+      (pos[1] - 1 .. pos[1] + 1).each do |y_ind|
+        if (0..grid.length - 1).include?(x_ind) && (0..grid[0].length - 1).include?(y_ind)
+          neighbors << grid[x_ind][y_ind]
+        end
+      end
+    end
+    neighbors
   end
 end
