@@ -56,16 +56,57 @@ class MinesweeperGame
       y_pos = y_pos.to_i
       case command
       when "r"
-        grid[x_pos][y_pos].reveal
+        if grid[x_pos][y_pos].reveal
+          puts "Sorry, you blew up"
+          break
+        end
       when "f"
         grid[x_pos][y_pos].flagged = true
       when "u"
         grid[x_pos][y_pos].flagged = false
       end
-      #check_victory
+      if check_victory
+        puts "You win!!!!"
+        break
+      end
       display_board
     end
+    puts "Game Over"
+    reveal_board
+    display_board
+
   end
+
+  def reveal_board
+    grid.each do |row|
+      row.each do |tile|
+        tile.reveal
+      end
+    end
+  end
+
+
+
+
+
+  def check_victory
+    num_flags = 0
+    num_bombs = 0
+    num_unrevealed = 0
+    grid.each do |row|
+      row.each do |tile|
+        num_bombs += 1 if tile.bomb
+        num_flags += 1 if tile.flagged
+        num_unrevealed +=1 unless tile.revealed
+      end
+    end
+    if num_flags == num_bombs && num_flags == num_unrevealed
+      true
+    else
+      false
+    end
+  end
+
 
   def get_user_input
     valid_input = false
