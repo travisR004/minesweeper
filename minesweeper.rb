@@ -88,6 +88,10 @@ class MinesweeperGame
       y_pos = y_pos.to_i
 
       case command
+      when "s"
+        game.save
+        puts "Game saved!"
+        return nil
       when "r"
         if grid[x_pos][y_pos].reveal
           puts "Sorry, you blew up"
@@ -147,7 +151,7 @@ class MinesweeperGame
 
     until valid_input
       puts "Please enter the coordinates of the space you wish to affect."
-      puts "Possible actions: f = flag, r = reveal, u = unflag"
+      puts "Possible actions: f = flag, r = reveal, u = unflag; s = save and quit."
       puts "(Example:  'f, 0, 1')"
 
       inputs = gets.chomp.gsub(" ", "").split(",")
@@ -160,7 +164,9 @@ class MinesweeperGame
   end
 
   def valid_input?(inputs)
-    if !["f", "r", "u"].include?(inputs[0])
+    if inputs[0] == "s"
+      return true
+    elsif !["f", "r", "u"].include?(inputs[0])
       return false
     elsif !(0..grid.length - 1).include?(inputs[1].to_i)
       return false
