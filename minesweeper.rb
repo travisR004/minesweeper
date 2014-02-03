@@ -40,8 +40,43 @@ end
 
 class MinesweeperGame
   attr_reader :grid
-  def initialize(bomb_freq = 0.2, x_dim = 9, y_dim = 9)
-    @grid = populate_grid(bomb_freq, x_dim, y_dim)
+  def initialize(bomb_freq = 0.125, x_dim = 9, y_dim = 9)
+
+    @grid = load || populate_grid(bomb_freq, x_dim, y_dim)
+  end
+
+
+  def load
+    puts "Would you like to load a previous game? (y/n)"
+    load = gets.chomp
+    if load =="y"
+      begin
+        puts "What is the name of the saved game (not including .txt extension)?"
+        saved_game = gets.chomp + ".txt"
+        grid = YAML.load(File.read(saved_game))
+      rescue
+        puts "Invalid name"
+        retry
+      end
+      return grid
+    end
+    nil
+  end
+
+  def save
+    begin
+      puts "What would you like to name your saved game (not including .txt extension)?"
+      filename = gets.chomp + ".txt"
+      raise if File.exist?(filename)
+      File.open(filename, "w") { |f| f.write(@grid.to_yaml) }
+    rescue
+      puts "A file by that name already exists.  Overwrite?  (y/n)"
+      if gets.chomp == "y"
+        File.open(filename, "w") { |f| f.write(@grid.to_yaml) }
+      else
+        retry
+      end
+    end
   end
 
   def play
@@ -196,4 +231,9 @@ class MinesweeperGame
     end
     neighbors
   end
+end
+
+if __FILE__ == $PROGRAM_NAME
+  game = MinesweeperGame.new
+  game.play
 end
