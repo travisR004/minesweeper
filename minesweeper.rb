@@ -7,12 +7,16 @@ class MinesweeperTile
     @pos = [x_index, y_index]
     @revealed = false
     @game = game
+    @flagged = false
   end
 
   def reveal
-    return true if self.bomb
     return nil if self.revealed
+    return nil if self.flagged
     self.revealed = true
+    return true if self.bomb
+
+
 
     edge_bombs = self.adjacent_bombs
 
@@ -62,6 +66,25 @@ class MinesweeperGame
       end
     end
     grid
+  end
+
+  def display_board
+    display = ""
+    grid.each do |row|
+      row.each do |tile|
+        if tile.flagged
+          display << "F"
+        elsif tile.revealed && !tile.bomb
+          display << tile.adjacent_bombs.to_s
+        elsif tile.revealed && tile.bomb
+          display << "*"
+        else
+          display << "-"
+        end
+      end
+      display << "\n"
+    end
+    puts display
   end
 
   def neighbors(pos)
