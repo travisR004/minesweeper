@@ -1,10 +1,29 @@
 class MinesweeperTile
   attr_reader :bomb, :pos
+  attr_accessor :revealed, :flagged
 
   def initialize(x_dim, y_dim)
     @bomb = false
     @pos = [x_dim, y_dim]
+    @revealed = false
   end
+
+  def reveal
+    return true if self.bomb
+    return nil if self.revealed
+    self.revealed = true
+
+    edge_bombs = self.adjacent_bombs
+
+    if edge_bombs == 0
+      self.adjacent_tiles.each.reveal
+    end
+    nil
+  end
+
+  def adjacent_bombs
+
+
 
   def add_bomb
     @bomb = true
