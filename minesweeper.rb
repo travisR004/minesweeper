@@ -1,5 +1,5 @@
 class MinesweeperTile
-  attr_reader :bomb, :pos. :game
+  attr_reader :bomb, :pos, :game
   attr_accessor :revealed, :flagged
 
   def initialize(x_index, y_index, game)
@@ -17,12 +17,18 @@ class MinesweeperTile
     edge_bombs = self.adjacent_bombs
 
     if edge_bombs == 0
-      self.adjacent_tiles.each.reveal
+      @game.neighbors.each.reveal
     end
     nil
   end
 
   def adjacent_bombs
+    bombs = 0
+    neighbors = @game.neighbors(@pos)
+    neighbors.each do |neighbor|
+      bombs += 1 if neighbor.bomb
+    end
+    bombs
   end
 
 
@@ -33,6 +39,7 @@ class MinesweeperTile
 end
 
 class MinesweeperGame
+  attr_reader :grid
   def initialize(bomb_freq = 0.2, x_dim = 9, y_dim = 9)
     @grid = populate_grid(bomb_freq, x_dim, y_dim)
   end
@@ -40,14 +47,12 @@ class MinesweeperGame
   def populate_grid(bomb_freq, x_dim, y_dim)
     total_bombs = (bomb_freq * x_dim * y_dim).floor
     grid = Array.new(x_dim) { Array.new(y_dim) }
-    p grid
     (0..x_dim - 1).each do |x_index|
       (0..y_dim - 1).each do |y_index|
         #Expand this definition later
-        grid[x_index][y_index] = MinesweeperTile.new(x_index, y_index)
+        grid[x_index][y_index] = MinesweeperTile.new(x_index, y_index, self)
       end
     end
-    p total_bombs
     remaining_bombs = total_bombs
     until remaining_bombs == 0
       pos_tile = grid[rand(x_dim)][rand(y_dim)]
