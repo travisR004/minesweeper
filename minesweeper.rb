@@ -16,13 +16,11 @@ class MinesweeperTile
     self.revealed = true
     return true if self.bomb
 
-
-
     edge_bombs = self.adjacent_bombs
-
     if edge_bombs == 0
       @game.neighbors(@pos).each { |tile| tile.reveal }
     end
+
     nil
   end
 
@@ -34,8 +32,6 @@ class MinesweeperTile
     end
     bombs
   end
-
-
 
   def add_bomb
     @bomb = true
@@ -50,10 +46,12 @@ class MinesweeperGame
 
   def play
     display_board
+
     while true
       command, x_pos, y_pos = get_user_input
       x_pos = x_pos.to_i
       y_pos = y_pos.to_i
+
       case command
       when "r"
         if grid[x_pos][y_pos].reveal
@@ -65,16 +63,18 @@ class MinesweeperGame
       when "u"
         grid[x_pos][y_pos].flagged = false
       end
+
       if check_victory
         puts "You win!!!!"
         break
       end
+
       display_board
     end
+
     puts "Game Over"
     reveal_board
     display_board
-
   end
 
   def reveal_board
@@ -85,14 +85,11 @@ class MinesweeperGame
     end
   end
 
-
-
-
-
   def check_victory
     num_flags = 0
     num_bombs = 0
     num_unrevealed = 0
+
     grid.each do |row|
       row.each do |tile|
         num_bombs += 1 if tile.bomb
@@ -100,6 +97,7 @@ class MinesweeperGame
         num_unrevealed +=1 unless tile.revealed
       end
     end
+
     if num_flags == num_bombs && num_flags == num_unrevealed
       true
     else
@@ -111,10 +109,12 @@ class MinesweeperGame
   def get_user_input
     valid_input = false
     inputs = ""
+
     until valid_input
       puts "Please enter the coordinates of the space you wish to affect."
       puts "Possible actions: f = flag, r = reveal, u = unflag"
       puts "(Example:  'f, 0, 1')"
+
       inputs = gets.chomp.gsub(" ", "").split(",")
       valid_input = valid_input?(inputs)
       if !valid_input
@@ -126,19 +126,14 @@ class MinesweeperGame
 
   def valid_input?(inputs)
     if !["f", "r", "u"].include?(inputs[0])
-      puts "1"
       return false
     elsif !(0..grid.length - 1).include?(inputs[1].to_i)
-      puts "2"
       return false
     elsif !(0..grid[0].length - 1).include?(inputs[2].to_i)
-      puts "3"
       return false
     elsif grid[inputs[1].to_i][inputs[2].to_i].revealed
-      puts "4"
       return false
     elsif inputs[0] == "u" && !grid[inputs[1].to_i][inputs[2].to_i].flagged
-      puts "5"
       return false
     else
       true
@@ -147,13 +142,14 @@ class MinesweeperGame
 
   def populate_grid(bomb_freq, x_dim, y_dim)
     total_bombs = (bomb_freq * x_dim * y_dim).floor
+
     grid = Array.new(x_dim) { Array.new(y_dim) }
     (0..x_dim - 1).each do |x_index|
       (0..y_dim - 1).each do |y_index|
-        #Expand this definition later
         grid[x_index][y_index] = MinesweeperTile.new(x_index, y_index, self)
       end
     end
+
     remaining_bombs = total_bombs
     until remaining_bombs == 0
       pos_tile = grid[rand(x_dim)][rand(y_dim)]
