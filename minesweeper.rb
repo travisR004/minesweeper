@@ -163,6 +163,9 @@ class MinesweeperGame
 
   def display_board
     display = ""
+    num_cols = grid[0].length
+    num_cols.times { |index| display << "#{index}|"}
+    display << "\n"
     grid.each do |row|
       row.each do |tile|
         if tile.flagged
@@ -174,9 +177,11 @@ class MinesweeperGame
         else
           display << "-"
         end
+        display << " "
       end
-      display << "\n"
+      display << "[#{grid.index(row)}]\n"
     end
+    num_cols.times { |index| display << "#{index}|"}
     puts display
   end
 
