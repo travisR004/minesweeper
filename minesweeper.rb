@@ -75,6 +75,16 @@ class MinesweeperGame
     @board.display_board
 
     while true
+
+      if @board.check_loss
+        puts "Boom!  You lose.  Better luck next time."
+        break
+      elsif @board.check_victory
+        puts "You win!!!!"
+        @board.update_leaderboard
+        break
+      end
+
       command, x_pos, y_pos = get_user_input
       if command == "s"
         @board.update_time
@@ -83,14 +93,6 @@ class MinesweeperGame
         return nil
       else
         @board.execute_command(command, x_pos.to_i, y_pos.to_i)
-      end
-      if @board.check_loss
-        puts "Boom!  You lose.  Better luck next time."
-        break
-      elsif @board.check_victory
-        puts "You win!!!!"
-        @board.update_leaderboard
-        break
       end
 
       @board.update_time
@@ -159,8 +161,8 @@ class MinesweeperBoard
 
   def update_leaderboard
     if File.exist?(@leaderboard_filepath)
-      high_scores = File.readlines(@leaderboard_filepath).map(&:chomp)
-      high_scores << @elapsed_time
+      high_scores = File.readlines(@leaderboard_filepath).map(&:chomp).map(&:to_f)
+      high_scores << @elapsed_time.round(3)
       high_scores.sort!
       high_scores = high_scores[0..9]
       File.open(@leaderboard_filepath, "w") { |f| f.write(high_scores.join("\n")) }
