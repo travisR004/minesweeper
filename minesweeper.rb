@@ -61,6 +61,7 @@ class MinesweeperGame
         puts "What is the name of the saved game (not including .txt extension)?"
         saved_game = gets.chomp + ".txt"
         board = YAML.load(File.read(saved_game))
+        board.last_action_time = Time.now
       rescue
         puts "Invalid name"
         retry
@@ -76,6 +77,7 @@ class MinesweeperGame
     while true
       command, x_pos, y_pos = get_user_input
       if command == "s"
+        @board.update_time
         @board.save
         puts "Game saved.  Exiting..."
         return nil
@@ -87,15 +89,18 @@ class MinesweeperGame
         break
       elsif @board.check_victory
         puts "You win!!!!"
+        @board.update_leaderboard
         break
       end
 
+      @board.update_time
       @board.display_board
     end
 
     puts "Game Over"
     @board.reveal_board
     @board.display_board
+    @board.display_leaderboard
   end
 
   def get_user_input
@@ -137,11 +142,43 @@ class MinesweeperGame
 end
 
 class MinesweeperBoard
-  attr_accessor :grid
+  attr_accessor :grid, :last_action_time, :elapsed_time
 
   def initialize(bomb_freq, x_dim, y_dim)
     @grid = populate_grid(x_dim, y_dim)
+    @last_action_time = Time.now
+    @elapsed_time = 0
     seed_bombs(bomb_freq, x_dim, y_dim)
+    @leaderboard_filepath = "highscores.txt"
+  end
+
+  def update_time
+    @elapsed_time += Time.now - @last_action_time
+    @last_action_time = Time.now
+  end
+
+  def update_leaderboard
+    if File.exist?(@leaderboard_filepath)
+      high_scores = File.readlines(@leaderboard_filepath).map(&:chomp)
+      high_scores << @elapsed_time
+      high_scores.sort!
+      high_scores = high_scores[0..9]
+      File.open(@leaderboard_filepath, "w") { |f| f.write(high_scores.join("\n")) }
+    else
+      File.open(@leaderboard_filepath, "w")
+      update_leaderboard
+    end
+  end
+
+  def display_leaderboard
+    if File.exist?(@leaderboard_filepath)
+      high_scores = File.read(@leaderboard_filepath)
+      puts "Top Ten High Scores: "
+      puts high_scores
+    else
+      File.open(@leaderboard_filepath, "w")
+      display_leaderboard
+    end
   end
 
   def populate_grid(x_dim, y_dim)
@@ -189,6 +226,7 @@ class MinesweeperBoard
     end
     num_cols.times { |index| display << "#{index}|"}
     puts display
+    puts "Elapsed Time: #{@elapsed_time}"
   end
 
   def neighbors(pos)
