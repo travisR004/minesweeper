@@ -48,7 +48,7 @@ class MinesweeperBoard
   def initialize_leaderboard
     default_leaderboard = {}
     10.times do |time|
-      default_leaderboard[((time + 1) * 100)] = "HAL 9000"
+      default_leaderboard[((time + 1) * 10000)] = "HAL 9000"
     end
     File.open(@leaderboard_filepath, "w") { |f| f.write(default_leaderboard.to_yaml) }
   end
@@ -76,30 +76,7 @@ class MinesweeperBoard
     nil
   end
 
-  def display_board
-    display = ""
-    num_cols = grid[0].length
-    num_cols.times { |index| display << "#{index}|"}
-    display << "\n"
-    grid.each do |row|
-      row.each do |tile|
-        if tile.flagged
-          display << "F"
-        elsif tile.revealed && !tile.bomb
-          display << tile.adjacent_bombs.to_s
-        elsif tile.revealed && tile.bomb
-          display << "*"
-        else
-          display << "-"
-        end
-        display << " "
-      end
-      display << "[#{grid.index(row)}]\n"
-    end
-    num_cols.times { |index| display << "#{index}|"}
-    puts display
-    puts "Elapsed Time: #{@elapsed_time}"
-  end
+
 
   def neighbors(pos)
     neighbors = []
@@ -148,18 +125,6 @@ class MinesweeperBoard
         tile.reveal
       end
     end
-  end
-
-  def execute_command(command, x_pos, y_pos)
-    case command
-    when "r"
-      @grid[x_pos][y_pos].reveal
-    when "f"
-      @grid[x_pos][y_pos].flagged = true
-    when "u"
-      @grid[x_pos][y_pos].flagged = false
-    end
-    nil
   end
 
   def save
