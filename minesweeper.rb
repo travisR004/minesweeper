@@ -1,5 +1,6 @@
 require "debugger"
 require "yaml"
+require "json"
 
 class MinesweeperTile
   attr_reader :bomb, :pos, :game
@@ -81,7 +82,9 @@ class MinesweeperGame
         break
       elsif @board.check_victory
         puts "You win!!!!"
-        @board.update_leaderboard
+        puts "Want to see if you have a high score? Enter Name: "
+        name = gets.chomp
+        @board.update_leaderboard(name)
         break
       end
 
@@ -159,28 +162,43 @@ class MinesweeperBoard
     @last_action_time = Time.now
   end
 
-  def update_leaderboard
+  def update_leaderboard(name)
     if File.exist?(@leaderboard_filepath)
-      high_scores = File.readlines(@leaderboard_filepath).map(&:chomp).map(&:to_f)
-      high_scores << @elapsed_time.round(3)
-      high_scores.sort!
-      high_scores = high_scores[0..9]
-      File.open(@leaderboard_filepath, "w") { |f| f.write(high_scores.join("\n")) }
+      high_scores = File.read(@leaderboard_filepath)
+      high_scores = YAML.load(high_scores)
+      high_scores[@elapsed_time.round(3)] = name
+      high_scores_array = high_scores.sort
+      high_scores_array = high_scores_array[0..9]
+      new_high_scores = {}
+      high_scores_array.each do |entry|
+        new_high_scores[entry[0]] = entry[1]
+      end
+      File.open(@leaderboard_filepath, "w") { |f| f.write(new_high_scores.to_yaml) }
     else
-      File.open(@leaderboard_filepath, "w")
-      update_leaderboard
+      initialize_leaderboard
+      update_leaderboard(name)
     end
   end
 
   def display_leaderboard
     if File.exist?(@leaderboard_filepath)
-      high_scores = File.read(@leaderboard_filepath)
+      high_scores = YAML.load(File.read(@leaderboard_filepath))
       puts "Top Ten High Scores: "
-      puts high_scores
+      high_scores.each do |score, name|
+        puts "#{name}:  #{score} seconds"
+      end
     else
-      File.open(@leaderboard_filepath, "w")
+      initialize_leaderboard
       display_leaderboard
     end
+  end
+
+  def initialize_leaderboard
+    default_leaderboard = {}
+    10.times do |time|
+      default_leaderboard[((time + 1) * 100)] = "HAL 9000"
+    end
+    File.open(@leaderboard_filepath, "w") { |f| f.write(default_leaderboard.to_yaml) }
   end
 
   def populate_grid(x_dim, y_dim)
