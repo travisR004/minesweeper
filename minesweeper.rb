@@ -17,7 +17,7 @@ class MinesweeperTile
     return nil if self.revealed
     return nil if self.flagged
     self.revealed = true
-    return true if self.bomb
+    return nil if self.bomb
 
     edge_bombs = self.adjacent_bombs
     if edge_bombs == 0
@@ -42,10 +42,14 @@ class MinesweeperTile
 end
 
 class MinesweeperGame
-  attr_reader :grid
+  attr_reader :board
   def initialize(bomb_freq = 0.125, x_dim = 9, y_dim = 9)
+    @board = load
 
-    @grid = load || populate_grid(bomb_freq, x_dim, y_dim)
+    unless @board
+      @board = MinesweeperBoard.new(bomb_freq, x_dim, y_dim)
+    end
+
   end
 
 
@@ -56,99 +60,43 @@ class MinesweeperGame
       begin
         puts "What is the name of the saved game (not including .txt extension)?"
         saved_game = gets.chomp + ".txt"
-        grid = YAML.load(File.read(saved_game))
+        board = YAML.load(File.read(saved_game))
       rescue
         puts "Invalid name"
         retry
       end
-      return grid
+      return board
     end
     nil
   end
 
-  def save
-    #debugger
-    yaml_grid = @grid.to_yaml
-    begin
-      puts "What would you like to name your saved game (not including .txt extension)?"
-      filename = gets.chomp + ".txt"
-      raise if File.exist?(filename)
-      File.open(filename, "w") { |f| f.write(yaml_grid) }
-    rescue
-      puts "A file by that name already exists.  Overwrite?  (y/n)"
-      if gets.chomp == "y"
-        File.open(filename, "w") { |f| f.write(yaml_grid) }
-      else
-        retry
-      end
-    end
-  end
-
   def play
-    display_board
+    @board.display_board
 
     while true
       command, x_pos, y_pos = get_user_input
-      x_pos = x_pos.to_i
-      y_pos = y_pos.to_i
-
-      case command
-      when "s"
-        self.save
-        puts "Game saved!"
+      if command == "s"
+        @board.save
+        puts "Game saved.  Exiting..."
         return nil
-      when "r"
-        if grid[x_pos][y_pos].reveal
-          puts "Sorry, you blew up"
-          break
-        end
-      when "f"
-        grid[x_pos][y_pos].flagged = true
-      when "u"
-        grid[x_pos][y_pos].flagged = false
+      else
+        @board.execute_command(command, x_pos.to_i, y_pos.to_i)
       end
-
-      if check_victory
+      if @board.check_loss
+        puts "Boom!  You lose.  Better luck next time."
+        break
+      elsif @board.check_victory
         puts "You win!!!!"
         break
       end
 
-      display_board
+      @board.display_board
     end
 
     puts "Game Over"
-    reveal_board
-    display_board
+    @board.reveal_board
+    @board.display_board
   end
-
-  def reveal_board
-    grid.each do |row|
-      row.each do |tile|
-        tile.reveal
-      end
-    end
-  end
-
-  def check_victory
-    num_flags = 0
-    num_bombs = 0
-    num_unrevealed = 0
-
-    grid.each do |row|
-      row.each do |tile|
-        num_bombs += 1 if tile.bomb
-        num_flags += 1 if tile.flagged
-        num_unrevealed +=1 unless tile.revealed
-      end
-    end
-
-    if num_flags == num_bombs && num_flags == num_unrevealed
-      true
-    else
-      false
-    end
-  end
-
 
   def get_user_input
     valid_input = false
@@ -173,29 +121,41 @@ class MinesweeperGame
       return true
     elsif !["f", "r", "u"].include?(inputs[0])
       return false
-    elsif !(0..grid.length - 1).include?(inputs[1].to_i)
+    elsif !(0..@board.x_dim - 1).include?(inputs[1].to_i)
       return false
-    elsif !(0..grid[0].length - 1).include?(inputs[2].to_i)
+    elsif !(0..@board.y_dim - 1).include?(inputs[2].to_i)
       return false
-    elsif grid[inputs[1].to_i][inputs[2].to_i].revealed
+    elsif @board.grid[inputs[1].to_i][inputs[2].to_i].revealed
       return false
-    elsif inputs[0] == "u" && !grid[inputs[1].to_i][inputs[2].to_i].flagged
+    elsif inputs[0] == "u" && !@board.grid[inputs[1].to_i][inputs[2].to_i].flagged
       return false
     else
       true
     end
   end
 
-  def populate_grid(bomb_freq, x_dim, y_dim)
-    total_bombs = (bomb_freq * x_dim * y_dim).floor
+end
 
+class MinesweeperBoard
+  attr_accessor :grid
+
+  def initialize(bomb_freq, x_dim, y_dim)
+    @grid = populate_grid(x_dim, y_dim)
+    seed_bombs(bomb_freq, x_dim, y_dim)
+  end
+
+  def populate_grid(x_dim, y_dim)
     grid = Array.new(x_dim) { Array.new(y_dim) }
     (0..x_dim - 1).each do |x_index|
       (0..y_dim - 1).each do |y_index|
         grid[x_index][y_index] = MinesweeperTile.new(x_index, y_index, self)
       end
     end
+    grid
+  end
 
+  def seed_bombs(bomb_freq, x_dim, y_dim)
+    total_bombs = (bomb_freq * x_dim * y_dim).floor
     remaining_bombs = total_bombs
     until remaining_bombs == 0
       pos_tile = grid[rand(x_dim)][rand(y_dim)]
@@ -204,7 +164,7 @@ class MinesweeperGame
         remaining_bombs -= 1
       end
     end
-    grid
+    nil
   end
 
   def display_board
@@ -242,9 +202,110 @@ class MinesweeperGame
     end
     neighbors
   end
+
+  def check_victory
+    num_flags = 0
+    num_bombs = 0
+    num_unrevealed = 0
+
+    grid.each do |row|
+      row.each do |tile|
+        num_bombs += 1 if tile.bomb
+        num_flags += 1 if tile.flagged
+        num_unrevealed +=1 unless tile.revealed
+      end
+    end
+
+    if num_flags == num_bombs && num_flags == num_unrevealed
+      true
+    else
+      false
+    end
+  end
+
+  def check_loss
+    grid.each do |row|
+      row.each do |tile|
+        return true if tile.bomb && tile.revealed
+      end
+    end
+    false
+  end
+
+  def reveal_board
+    grid.each do |row|
+      row.each do |tile|
+        tile.reveal
+      end
+    end
+  end
+
+  def execute_command(command, x_pos, y_pos)
+    case command
+    when "r"
+      @grid[x_pos][y_pos].reveal
+    when "f"
+      @grid[x_pos][y_pos].flagged = true
+    when "u"
+      @grid[x_pos][y_pos].flagged = false
+    end
+    nil
+  end
+
+  def save
+    #debugger
+    yaml_grid = self.to_yaml
+    begin
+      puts "What would you like to name your saved game (not including .txt extension)?"
+      filename = gets.chomp + ".txt"
+      raise if File.exist?(filename)
+      File.open(filename, "w") { |f| f.write(yaml_grid) }
+    rescue
+      puts "A file by that name already exists.  Overwrite?  (y/n)"
+      if gets.chomp == "y"
+        File.open(filename, "w") { |f| f.write(yaml_grid) }
+      else
+        retry
+      end
+    end
+  end
+
+  def x_dim
+    return @grid.length
+  end
+
+  def y_dim
+    return @grid[0].length
+  end
 end
+
+
+
+
 
 if __FILE__ == $PROGRAM_NAME
   game = MinesweeperGame.new
   game.play
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
